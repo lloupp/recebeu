@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { getApiContext } from "@/lib/api-context";
 import { readImportFile, normalizeRows, type ColumnMapping } from "@/lib/domain/import-file";
-import { TARGET_FIELDS } from "@/lib/domain/imports";
+import { TARGET_FIELDS, type TargetField } from "@/lib/domain/imports";
 
 export const runtime = "nodejs";
 
 function validMapping(input: unknown): input is ColumnMapping {
   if (!input || typeof input !== "object" || Array.isArray(input)) return false;
-  return Object.values(input as Record<string, unknown>).every((value) => value === "" || (typeof value === "string" && TARGET_FIELDS.includes(value as never)));
+  return Object.values(input as Record<string, unknown>).every(
+    (value) =>
+      value === "" ||
+      (typeof value === "string" && TARGET_FIELDS.includes(value as TargetField)),
+  );
 }
 
 export async function POST(request: Request) {
@@ -23,8 +27,8 @@ export async function POST(request: Request) {
     const mapping = JSON.parse(mappingText) as unknown;
     if (!validMapping(mapping)) return NextResponse.json({ error: "Mapeamento inválido." }, { status: 400 });
 
-    const required = new Set(Object.values(mapping));
-    for (const field of ["customer_name", "amount", "due_date"]) {
+    const required = new Set<TargetField>(Object.values(mapping).filter((value): value is TargetField => value !== ""));
+    for (const field of ["customer_name", "amount", "due_date"] as const satisfies readonly TargetField[]) {
       if (!required.has(field)) return NextResponse.json({ error: `Mapeie o campo obrigatório: ${field}.` }, { status: 400 });
     }
 
