@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { getApiContext } from "@/lib/api-context";
+import { isLocalMode } from "@/lib/storage-mode";
+import { requireLocalOrigin } from "@/lib/local/security";
 import { readImportFile } from "@/lib/domain/import-file";
 import { suggestMapping } from "@/lib/domain/imports";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const context = await getApiContext();
-  if (!context) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (isLocalMode) {
+    const denial = requireLocalOrigin(request);
+    if (denial) return denial;
+  } else {
+    const context = await getApiContext();
+    if (!context) return NextResponse.json({error:"Não autenticado."},{status:401});
+  }
 
   try {
     const form = await request.formData();
