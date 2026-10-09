@@ -96,4 +96,10 @@ create trigger protect_imported_paid_receivable
 before update on public.receivables
 for each row execute function private.protect_imported_paid_receivable();
 
+-- Do not let authenticated clients bypass the ledger by writing directly
+-- to receivables or payments. The existing import RPC and this payment RPC
+-- run under reviewed, explicit authorization and remain functional.
+revoke insert, update, delete on table public.receivables from public, anon, authenticated;
+revoke insert, update, delete on table public.payments from public, anon, authenticated;
+
 commit;
