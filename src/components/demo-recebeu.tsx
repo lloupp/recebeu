@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { agingBucket, effectiveStatus, sumByAging, sumByStatus, type ReceivableLike } from "@/lib/domain/receivables";
+import { effectiveStatus, sumByAging, sumByStatus, type ReceivableLike } from "@/lib/domain/receivables";
 
 type DemoItem = ReceivableLike & { id: string; customer: string; description: string };
 type DemoFilter = "all" | "overdue" | "pending" | "paid";
