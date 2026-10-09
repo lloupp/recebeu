@@ -101,5 +101,18 @@ for each row execute function private.protect_imported_paid_receivable();
 -- run under reviewed, explicit authorization and remain functional.
 revoke insert, update, delete on table public.receivables from public, anon, authenticated;
 revoke insert, update, delete on table public.payments from public, anon, authenticated;
+revoke insert, update, delete on table public.audit_logs from public, anon, authenticated;
+
+-- Explicit grants are necessary on newer Supabase projects where privileges
+-- are no longer automatically granted to the API roles. RLS still controls
+-- which organization-specific rows an authenticated user may read.
+grant select on table
+  public.organizations,
+  public.organization_members,
+  public.customers,
+  public.receivables,
+  public.payments,
+  public.import_batches
+to authenticated;
 
 commit;
