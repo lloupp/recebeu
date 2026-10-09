@@ -20,15 +20,23 @@ export default async function DashboardPage() {
   const { supabase, membership } = await getCurrentOrganization();
   const organization = membership.organizations as unknown as { timezone?: string } | null;
   const today = localToday(new Date(), organization?.timezone ?? "America/Sao_Paulo");
-  const { data, error } = await supabase
-    .from("receivables")
-    .select("amount,due_date,status,paid_at")
-    .eq("organization_id", membership.organization_id)
-    .neq("status", "cancelled")
-    .limit(5000);
-
-  if (error) throw error;
-  const receivables = (data ?? []).map((r) => ({ ...r, amount: Number(r.amount) })) as ReceivableLike[];
+  // Fetch in stable pages: the PostgREST API can cap individual responses
+  // below the requested limit (often 1,000 rows).
+  const receivables: ReceivableLike[] = [];
+  for (let offset = 0; offset < 5000; offset += 1000) {
+    const { data, error } = await supabase
+      .from("receivables")
+      .select("id,amount,due_date,status,paid_at")
+      .eq("organization_id", membership.organization_id)
+      .neq("status", "cancelled")
+      .order("id", { ascending: true })
+      .range(offset, offset + 999);
+    if (error) throw error;
+    receivables.push(...(data ?? []).map((r) => ({
+      amount: Number(r.amount), due_date: r.due_date, status: r.status, paid_at: r.paid_at,
+    })) as ReceivableLike[]);
+    if (!data || data.length < 1000) break;
+  }
   const totals = sumByStatus(receivables, today);
   const aging = sumByAging(receivables, today);
   const open = totals.pending + totals.overdue;
