@@ -53,3 +53,25 @@ correspondente antes de usar a ação de pagamento. Não aplique em outro projet
 **Limites atuais:** dashboard até 5.000 títulos e lista até 200 títulos.
 Não anuncie o produto como pronto para carteiras maiores antes de implementar
 paginação/consulta agregada e confirmar permissões, RLS, migrações e fluxos reais.
+
+## Demonstração sem banco
+
+Acesse a rota /demo com npm run dev. Ela mostra apenas empresas fictícias
+e uma carteira congelada em 08/10/2026. Permite filtrar, pesquisar e simular
+pagamento em memória no navegador. Não cria clientes, não grava pagamentos,
+não envia cobranças e não depende das credenciais Supabase.
+
+A rota /demo é código de demonstração, **não equivale à aplicação autenticada**.
+Qualquer hospedagem externa destinada a pilotos deverá estar protegida
+por autenticação de implantação e ser validada antes de compartilhar o link.
+
+## CI: teste de banco descartável
+
+O job database-integration inicia PostgreSQL 17 temporário no GitHub Actions,
+carrega um substituto de autenticação apenas para testes, executa as migrações
+0001 e 0002 e testa isolamento entre organizações, papéis, duplicidade de
+pagamento, proteção contra importação e auditoria.
+
+Esse job não conecta a projeto Supabase real nem testa fluxos completos do
+Auth/SSR/browser. Use um ambiente Supabase **dedicado ao Recebeu** e teste com
+dois usuários reais e duas organizações antes de liberar um piloto.
