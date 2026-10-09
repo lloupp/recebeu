@@ -31,8 +31,12 @@ try {
   await page.locator('input[type="file"]').setInputFiles({
     name:"local.csv",mimeType:"text/csv",buffer:Buffer.from(csv)
   });
-  await page.getByRole("button",{name:"Validar arquivo"}).click();
-  await page.getByText("1 linhas detectadas").waitFor();
+  const [previewResponse]=await Promise.all([
+    page.waitForResponse(response=>response.url().includes("/api/import/preview")),
+    page.getByRole("button",{name:"Validar arquivo"}).click(),
+  ]);
+  console.log("Import preview:",previewResponse.status(),await previewResponse.text());
+  await page.getByText("1 linhas detectadas",{exact:false}).waitFor();
   await page.getByRole("button",{name:"Importar recebíveis"}).click();
   await page.getByText("Importação concluída com sucesso.").waitFor();
   console.log("PASS: import spreadsheet without Supabase");
