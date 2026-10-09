@@ -67,6 +67,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local-demo-placeholder
       NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
       BASE_URL: http://127.0.0.1:3000
+      RECEBEU_STORAGE: local
+      RECEBEU_DATA_DIR: /tmp/recebeu-local-e2e
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,6 +98,8 @@ jobs:
           '
       - name: Test fictional dashboard, search, payment simulation and mobile
         run: PLAYWRIGHT_MODULE_PATH=/tmp/recebeu-browser/node_modules/playwright node tests/e2e/demo-smoke.mjs
+      - name: Testar cadastro, planilha e pagamentos reais no SQLite local
+        run: PLAYWRIGHT_MODULE_PATH=/tmp/recebeu-browser/node_modules/playwright node tests/e2e/local-smoke.mjs
       - name: Print app logs on failure
         if: failure()
         run: cat /tmp/recebeu-next.log || true
