@@ -75,3 +75,60 @@ pagamento, proteção contra importação e auditoria.
 Esse job não conecta a projeto Supabase real nem testa fluxos completos do
 Auth/SSR/browser. Use um ambiente Supabase **dedicado ao Recebeu** e teste com
 dois usuários reais e duas organizações antes de liberar um piloto.
+
+## Uso real no computador (sem Supabase)
+
+**Modo padrão:** SQLite local. Não precisa criar conta, projeto Supabase, Docker,
+chave API ou conexão com a internet depois que as dependências forem instaladas.
+O modo local é individual e não deve ser aberto na rede.
+
+Recomendado Node.js 24 LTS (ou Node.js >=22.13, onde node:sqlite ainda
+era experimental), Git e npm instalados.
+
+    git clone https://github.com/lloupp/recebeu.git
+    cd recebeu
+    git switch feat/manual-payment-and-aging-20261008
+    npm ci
+    npm run dev
+
+Abra http://127.0.0.1:3000 (Dashboard, Clientes, Recebíveis e Importações).
+Os scripts dev e start escutam SOMENTE no loopback 127.0.0.1.
+
+O arquivo de banco é criado na primeira operação no diretório do usuário:
+
+- Linux/macOS: ~/.recebeu/recebeu.sqlite
+- Windows: %USERPROFILE%\.recebeu\recebeu.sqlite
+
+Para usar outra pasta, defina RECEBEU_DATA_DIR antes de iniciar; a pasta deve
+ser gravável e não deve estar em diretórios públicos ou compartilhados.
+
+**Backup:** feche o Recebeu antes de copiar o banco. Se a aplicação estiver
+aberta, transações podem estar também nos arquivos SQLite WAL. Com a aplicação
+parada, copie a pasta .recebeu inteira para um local seguro. Restaurar exige
+fechar o app e devolver os arquivos originais na mesma pasta. Não apague
+o banco ao atualizar o código ou as dependências.
+
+Este modo usa UUIDs para clientes/recebíveis e armazenamento monetário em
+centavos inteiros, com trilha de auditoria para importações e pagamentos.
+O importador aceita CSV/XLSX; atualiza por ID externo se ainda não pago.
+Pagamentos confirmados não podem ser sobrescritos por reimportação.
+Não há conciliação parcial/estorno nem cobrança automática.
+
+**Segurança:** não execute npm run dev/start em interfaces de rede nem coloque
+o Recebeu atrás de túnel/reverse proxy. O modo local não tem autenticação,
+perfis ou isolamento multiusuário. Proteja a sessão e os arquivos do sistema
+operacional. Antes de trabalhar em equipe, migre para uma solução com
+autenticação e isolamento de organizações revisados.
+
+## Migração futura para Supabase
+
+O backend hospedado original foi preservado. A variável
+RECEBEU_STORAGE=supabase seleciona o fluxo com Supabase Auth/Postgres (exige
+NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY e migrações).
+Não basta alterar a variável sobre dados existentes: será necessária uma
+rotina explícita de exportação/transformação dos registros SQLite, validação
+de totais, IDs, pagamentos e auditoria e a configuração de acessos por empresa.
+Não sincroniza automaticamente. O banco local continua intacto.
+
+Os testes de UI local persistente estão em tests/e2e/local-smoke.mjs e executam
+com um banco temporário no GitHub Actions, sem Supabase.
