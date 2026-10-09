@@ -26,3 +26,78 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  database-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: recebeu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d recebeu_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-test-only
+      PGDATABASE: recebeu_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar migracoes, isolamento e pagamentos no PostgreSQL efemero
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/integration/prepare-postgres.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/0001_foundation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/0002_record_receivable_payment.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/integration/payment-rls.sql
+
+  demo-browser:
+    runs-on: ubuntu-latest
+    env:
+      # Deliberately no Supabase variables: full local workflow must be independent.
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      BASE_URL: http://127.0.0.1:3000
+      RECEBEU_STORAGE: local
+      RECEBEU_DATA_DIR: /tmp/recebeu-local-e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install pinned browser test dependency (CI only)
+        run: npm install --prefix /tmp/recebeu-browser --no-audit --no-fund playwright@1.56.1
+      - name: Install Chromium and system dependencies
+        run: /tmp/recebeu-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Build standalone demo with unreachable Supabase host
+        run: npm run build
+      - name: Start app for browser tests
+        run: |
+          npm run start -- --hostname 127.0.0.1 > /tmp/recebeu-next.log 2>&1 &
+          node --input-type=module -e '
+            let ready = false;
+            for (let attempt = 0; attempt < 60; attempt++) {
+              try {
+                const res = await fetch("http://127.0.0.1:3000/demo");
+                if (res.status === 200) { ready = true; break; }
+              } catch {}
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            if (!ready) process.exit(1);
+          '
+      - name: Test fictional dashboard, search, payment simulation and mobile
+        run: PLAYWRIGHT_MODULE_PATH=/tmp/recebeu-browser/node_modules/playwright node tests/e2e/demo-smoke.mjs
+      - name: Testar cadastro, planilha e pagamentos reais no SQLite local
+        run: PLAYWRIGHT_MODULE_PATH=/tmp/recebeu-browser/node_modules/playwright node tests/e2e/local-smoke.mjs
+      - name: Print app logs on failure
+        if: failure()
+        run: cat /tmp/recebeu-next.log || true

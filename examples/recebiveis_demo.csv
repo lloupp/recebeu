@@ -1,0 +1,9 @@
+Cliente;Valor;Vencimento;Status;ID;Descrição
+Empresa Fictícia Alfa;1200,50;01/09/2026;Pendente;DEMO-0001;Mensalidade de serviço
+Empresa Fictícia Beta;780,00;20/09/2026;Pendente;DEMO-0002;Consultoria
+Empresa Fictícia Gama;340,00;30/09/2026;Pendente;DEMO-0003;Assinatura
+Empresa Fictícia Delta;2250,00;08/10/2026;Pendente;DEMO-0004;Projeto concluído
+Empresa Fictícia Épsilon;490,90;15/10/2026;Pendente;DEMO-0005;Mensalidade de serviço
+Empresa Fictícia Zeta;199,00;25/10/2026;Pendente;DEMO-0006;Serviço recorrente
+Empresa Fictícia Eta;1500,00;05/08/2026;Pendente;DEMO-0007;Serviço antigo
+Empresa Fictícia Teta;89,90;14/07/2026;Pendente;DEMO-0008;Mensalidade atrasada
