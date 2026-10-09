@@ -62,9 +62,7 @@ jobs:
   demo-browser:
     runs-on: ubuntu-latest
     env:
-      # These values point nowhere. The demo must not make a database request.
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:59999
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local-demo-placeholder
+      # Deliberately no Supabase variables: full local workflow must be independent.
       NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
       BASE_URL: http://127.0.0.1:3000
       RECEBEU_STORAGE: local
