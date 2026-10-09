@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isLocalMode } from "@/lib/storage-mode";
 import { getCurrentOrganization } from "@/lib/auth";
 import { localToday } from "@/lib/domain/dates";
 import { sumByAging, sumByStatus, type ReceivableLike } from "@/lib/domain/receivables";
@@ -17,6 +18,28 @@ const bands = [
 ] as const;
 
 export default async function DashboardPage() {
+  if (isLocalMode) {
+    const { listReceivables } = await import("@/lib/local/store");
+    const today = localToday(new Date(), "America/Sao_Paulo");
+    const receivables = listReceivables();
+    const totals = sumByStatus(receivables, today);
+    const aging = sumByAging(receivables, today);
+    return <section className="stack">
+      <div><h1>Dashboard · Local</h1><p className="muted">Dados salvos neste computador. Posição de {today.split("-").reverse().join("/")}.</p></div>
+      <div className="grid metrics">
+        <article className="card metric"><div className="label">A receber</div><div className="value">{brl(totals.pending + totals.overdue)}</div></article>
+        <article className="card metric"><div className="label">Vencido</div><div className="value">{brl(totals.overdue)}</div></article>
+        <article className="card metric"><div className="label">Recebido</div><div className="value">{brl(totals.paid)}</div></article>
+        <article className="card metric"><div className="label">Títulos na carteira</div><div className="value">{receivables.length}</div></article>
+      </div>
+      <div className="card"><h2>Faixas de vencimento</h2><div className="table-wrap"><table><tbody>
+        {bands.map(band=><tr key={band.key}><td>{band.label}</td><td>{brl(aging[band.key])}</td></tr>)}
+      </tbody></table></div></div>
+      <div className="card"><strong>Começar</strong><p className="muted">Cadastre um cliente ou importe uma planilha. Os dados continuam disponíveis após reiniciar o Recebeu.</p>
+        <div className="row"><Link href="/customers" className="button">Cadastrar cliente</Link><Link href="/imports" className="button secondary">Importar planilha</Link></div>
+      </div>
+    </section>;
+  }
   const { supabase, membership } = await getCurrentOrganization();
   const organization = membership.organizations as unknown as { timezone?: string } | null;
   const today = localToday(new Date(), organization?.timezone ?? "America/Sao_Paulo");
