@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiContext } from "@/lib/api-context";
+import { isLocalMode } from "@/lib/storage-mode";
+import { requireLocalOrigin } from "@/lib/local/security";
 import { readImportFile, normalizeRows, type ColumnMapping } from "@/lib/domain/import-file";
 import { TARGET_FIELDS, type TargetField } from "@/lib/domain/imports";
 
@@ -15,9 +17,17 @@ function validMapping(input: unknown): input is ColumnMapping {
 }
 
 export async function POST(request: Request) {
-  const context = await getApiContext();
-  if (!context) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (context.membership.role === "viewer") return NextResponse.json({ error: "Sem permissão para importar." }, { status: 403 });
+  let context: Awaited<ReturnType<typeof getApiContext>> = null;
+  if (isLocalMode) {
+    const denial = requireLocalOrigin(request);
+    if (denial) return denial;
+  } else {
+    context = await getApiContext();
+    if (!context) return NextResponse.json({error:"Não autenticado."},{status:401});
+    if (context.membership.role === "viewer") {
+      return NextResponse.json({error:"Sem permissão para importar."},{status:403});
+    }
+  }
 
   try {
     const form = await request.formData();
@@ -39,6 +49,12 @@ export async function POST(request: Request) {
     }
     if (!normalized.rows.length) return NextResponse.json({ error: "Nenhuma linha válida encontrada." }, { status: 400 });
 
+    if (isLocalMode) {
+      const {commitImport}=await import("@/lib/local/store");
+      const result=commitImport(file.name,normalized.rows);
+      return NextResponse.json({ok:true,result});
+    }
+    if (!context) return NextResponse.json({error:"Não autenticado."},{status:401});
     const { data, error } = await context.supabase.rpc("commit_receivables_import", {
       p_organization_id: context.membership.organization_id,
       p_filename: file.name,
