@@ -4,6 +4,18 @@ Micro-SaaS B2B para contas a receber de pequenas e médias empresas brasileiras.
 
 > Importe sua planilha. Veja quem está atrasado. Organize a cobrança. Meça quanto recuperou.
 
+## Começar sem Supabase (recomendado)
+
+O Recebeu funciona diretamente no seu computador com SQLite local, sem
+cadastro em serviços externos. Veja a seção **Uso real no computador**
+mais abaixo, ou execute (Node.js 24 LTS recomendado):
+
+    npm ci
+    npm run dev
+
+Abra http://127.0.0.1:3000. Dados salvos automaticamente em ~/.recebeu.
+
+
 ## Escopo da primeira milestone
 
 - autenticação com Supabase Auth;
@@ -23,7 +35,7 @@ Micro-SaaS B2B para contas a receber de pequenas e médias empresas brasileiras.
 - Supabase Auth + RLS;
 - Vercel para o app web.
 
-## Desenvolvimento
+## Desenvolvimento com Supabase (opcional)
 
 1. Crie um projeto no Supabase.
 2. Copie `.env.example` para `.env.local` e preencha as variáveis.
