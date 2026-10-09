@@ -75,9 +75,9 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Install pinned browser test dependency (CI only)
-        run: npm install --no-save --package-lock=false playwright@1.56.1
+        run: npm install --prefix /tmp/recebeu-browser --no-audit --no-fund playwright@1.56.1
       - name: Install Chromium and system dependencies
-        run: npx playwright install --with-deps chromium
+        run: /tmp/recebeu-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Build standalone demo with unreachable Supabase host
         run: npm run build
       - name: Start app for browser tests
@@ -95,7 +95,7 @@ jobs:
             if (!ready) process.exit(1);
           '
       - name: Test fictional dashboard, search, payment simulation and mobile
-        run: node tests/e2e/demo-smoke.mjs
+        run: PLAYWRIGHT_MODULE_PATH=/tmp/recebeu-browser/node_modules/playwright node tests/e2e/demo-smoke.mjs
       - name: Print app logs on failure
         if: failure()
         run: cat /tmp/recebeu-next.log || true
