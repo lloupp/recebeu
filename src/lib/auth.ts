@@ -14,7 +14,7 @@ export async function getCurrentOrganization() {
   const { supabase, userId } = await requireUser();
   const { data, error } = await supabase
     .from("organization_members")
-    .select("organization_id, role, organizations(id, name)")
+    .select("organization_id, role, organizations(id, name, timezone)")
     .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1)
