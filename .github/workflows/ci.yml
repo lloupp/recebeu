@@ -26,3 +26,35 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  database-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: recebeu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d recebeu_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-test-only
+      PGDATABASE: recebeu_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar migracoes, isolamento e pagamentos no PostgreSQL efemero
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/integration/prepare-postgres.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/0001_foundation.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/0002_record_receivable_payment.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/integration/payment-rls.sql
