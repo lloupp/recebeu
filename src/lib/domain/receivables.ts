@@ -41,3 +41,23 @@ export function sumByStatus(receivables: ReceivableLike[], todayIso: string) {
     { paid: 0, pending: 0, overdue: 0 },
   );
 }
+
+/** Amounts by maturity band; paid and cancelled receivables are excluded. */
+export function sumByAging(receivables: ReceivableLike[], todayIso: string) {
+  const totals = {
+    not_due: 0,
+    "1_7": 0,
+    "8_30": 0,
+    "31_60": 0,
+    "61_90": 0,
+    "90_plus": 0,
+  };
+
+  for (const item of receivables) {
+    const status = effectiveStatus(item, todayIso);
+    if (status === "paid" || status === "cancelled") continue;
+    const bucket = agingBucket(item.due_date, todayIso);
+    totals[bucket] += item.amount;
+  }
+  return totals;
+}
