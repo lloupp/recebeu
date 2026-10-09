@@ -45,7 +45,7 @@ try {
   const invoice=page.locator("tbody tr").filter({hasText:"Empresa Importada"});
   page.once("dialog",d=>d.accept());
   await invoice.getByRole("button",{name:"Marcar recebido"}).click();
-  await page.getByText("Pagamento salvo no banco local.").waitFor();
+  await invoice.locator(".badge").getByText("Recebido").waitFor();
   await page.reload();
   assert.match(await invoice.locator(".badge").textContent()??"",/Recebido/);
   const db=new DatabaseSync(join(process.env.RECEBEU_DATA_DIR,"recebeu.sqlite"));
